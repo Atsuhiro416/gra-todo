@@ -2,16 +2,16 @@
   <div id="app">
     <div class="container">
       <div class="todo-box">
-        <div class="top-wrapper">
+        <div class="top-wrapper flex between">
           <h1>Todo List</h1>
-          <!-- <div class="sort-labels">
+          <div class="tabs">
             <label v-for="(label, index) in options" :key="index">
               <input type="radio"
               v-model="current"
               :value="label.value">
               {{ label.label }}
             </label>
-          </div> -->
+          </div>
         </div>
         <div class="create-todo flex between">
           <input type="text" v-model="newTodo" @keyup.enter="addTodo">
@@ -19,15 +19,15 @@
         </div>
         <div class="todo-lists">
           <ul>
-            <li v-for="todoItem in todos"
+            <li v-for="todoItem in filteredTodos"
             :key="todoItem.id"
             class="flex between">
               <div class="list-left">
-                <!-- <input type="checkbox"> -->
+                <input type="checkbox" v-model="todoItem.state" @click="changeState(todoItem.id, todoItem.todo, todoItem.state)">
                 <input type="text" v-model="todoItem.todo">
               </div>
               <div class="buttons">
-                <button @click="updateTodo(todoItem.id, todoItem.todo)" class="update-btn button">更新</button>
+                <button @click="updateTodo(todoItem.id, todoItem.todo, todoItem.state)" class="update-btn button">更新</button>
                 <button @click="deleteTodo(todoItem.id)" class="del-btn button">削除</button>
               </div>
             </li>
@@ -47,12 +47,12 @@ export default {
     return {
       newTodo: "",
       todos: [],
-      // options: [
-      //   { value: 0, label: 'All' },
-      //   { value: 1, label: 'Active' },
-      //   { value: 2, label: 'Completed' },
-      // ],
-      // current: 0,
+      options: [
+        { value: 0, label: 'All' },
+        { value: 1, label: 'Active' },
+        { value: 2, label: 'Completed' },
+      ],
+      current: 0,
     };
   },
   methods: {
@@ -67,15 +67,17 @@ export default {
       } else {
         const sendTodo = {
           todo: this.newTodo,
+          state: 0
         };
         await axios.post("https://morning-savannah-29228.herokuapp.com/api/todo", sendTodo);
         await this.getTodo();
       }
         this.newTodo = "";
     },
-    async updateTodo(id, todo) {
+    async updateTodo(id, todo, state) {
       const changeTodo = {
         todo: todo,
+        state: state
       };
       await axios.put("https://morning-savannah-29228.herokuapp.com/api/todo/" + id, changeTodo);
       await this.getTodo();
@@ -83,30 +85,43 @@ export default {
     async deleteTodo(id) {
       await axios.delete("https://morning-savannah-29228.herokuapp.com/api/todo/" + id);
       await this.getTodo();
+    },
+    async changeState(id, todo, state) {
+      if(state === 1) {
+        state = 0;
+      } else if(state === 0) {
+        state = 1;
+      }
+      const sendState = {
+        todo: todo,
+        state: state
+      };
+      await axios.put("https://morning-savannah-29228.herokuapp.com/api/todo/" + id, sendState);
+      await this.getTodo();
     }
   },
   created() {
     this.getTodo();
   },
   computed: {
-    // filteredTodos() {
-    //   if(this.current === -1) {
-    //     return this.todos;
-    //   } else {
-    //     let showCompleted = false;
-    //     if(this.current === 1) {
-    //       showCompleted = true;
-    //     }
-    //     let filterTodos = {};
-    //     for(let key in this.todos) {
-    //       let todo = this.todos[key];
-    //       if(todo.isCompleted == showCompleted) {
-    //         filterTodos[key] = todo;
-    //       }
-    //     }
-    //   }
-    //   return filterTodos;
-    // }
+    filteredTodos() {
+      if(this.current === 0) {
+        return this.todos;
+      } else {
+        let showIsCompleted = false;
+        if(this.current === 2) {
+          showIsCompleted = true;
+        }
+        let filterTodos = {};
+        for(let key in this.todos) {
+          let todo = this.todos[key];
+          if(todo.state == showIsCompleted) {
+            filterTodos[key] = todo;
+          }
+        }
+      return filterTodos;
+      }
+    }
   }
 }
 </script>
@@ -246,14 +261,26 @@ body {
   font-size: 24px;
   margin-bottom: 10px;
 }
+.create-todo input {
+  font-size: 18px;
+}
 input {
   border-radius: 5px;
   border: 1px solid #ccc;
   padding: 10px;
-  font-size: 14px;
+  font-size: 15px;
 }
 input:focus {
   outline: none;
+}
+input[type="checkbox"] {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
+input[type="checkbox"]:checked + input {
+  text-decoration: line-through;
+  opacity: .4;
 }
 .create-todo {
   margin-bottom: 20px;
