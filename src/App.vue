@@ -83,8 +83,10 @@ export default {
       await this.getTodo();
     },
     async deleteTodo(id) {
-      await axios.delete("https://morning-savannah-29228.herokuapp.com/api/todo/" + id);
-      await this.getTodo();
+      if(window.confirm('削除しますか？')) {
+        await axios.delete("https://morning-savannah-29228.herokuapp.com/api/todo/" + id);
+        await this.getTodo();
+      }
     },
     async changeState(id, todo, state) {
       if(state === 1) {
